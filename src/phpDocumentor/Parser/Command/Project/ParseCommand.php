@@ -20,6 +20,7 @@ use phpDocumentor\Descriptor\ProjectDescriptorBuilder;
 use phpDocumentor\Fileset\Collection;
 use phpDocumentor\Parser\Event\PreFileEvent;
 use phpDocumentor\Parser\Exception\FilesNotFoundException;
+use phpDocumentor\Parser\Middleware\CacheMiddleware;
 use phpDocumentor\Parser\Parser;
 use phpDocumentor\Parser\Util\ParserPopulator;
 use Symfony\Component\Console\Helper\ProgressHelper;
@@ -159,6 +160,9 @@ class ParseCommand extends Command
             throw new \Exception($this->__('PPCPP:EXC-BADTARGET'));
         }
         $this->getCache()->getOptions()->setCacheDir($target);
+        if ($input->getOption('force')) {
+            $this->getCacheMiddleware()->disable();
+        }
 
         $builder = $this->getBuilder();
         $builder->createProjectDescriptor();
@@ -376,5 +380,10 @@ class ParseCommand extends Command
     // @codingStandardsIgnoreEnd
     {
         return vsprintf($this->translator->translate($text), $parameters);
+    }
+
+    private function getCacheMiddleware(): CacheMiddleware
+    {
+        return $this->getContainer()->offsetGet('parser.middleware.cache');
     }
 }

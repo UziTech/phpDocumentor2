@@ -54,22 +54,27 @@ class ServiceProvider implements ServiceProviderInterface
             );
         }
 
+        $app['parser.middleware.cache'] = $app->share(
+            function () {
+                return new CacheMiddleware(
+                    new Pool(new FileSystem(['path' => 'build/api-cache']))
+                );
+            }
+        );
         $app['parser'] = $app->share(
             function ($app) {
                 $stopWatch = $app['kernel.stopwatch'];
 
-                $adapter = new FileSystem(['path' => 'build/api-cache']);
-                $cachePool = new Pool($adapter);
-
+                $prettyPrinter = new PrettyPrinter();
                 $strategies = [
-                    new Factory\Argument(new PrettyPrinter()),
+                    new Factory\Argument($prettyPrinter),
                     new Factory\Class_(),
-                    new Factory\Constant(new PrettyPrinter()),
+                    new Factory\Constant($prettyPrinter),
                     new Factory\DocBlock(DocBlockFactory::createInstance()),
                     new Factory\Function_(),
                     new Factory\Interface_(),
                     new Factory\Method(),
-                    new Factory\Property(new PrettyPrinter()),
+                    new Factory\Property($prettyPrinter),
                     new Factory\Trait_(),
                     new Factory\File(
                         NodesFactory::createInstance(),
@@ -78,9 +83,7 @@ class ServiceProvider implements ServiceProviderInterface
                             new StopwatchMiddleware(
                                 $stopWatch
                             ),
-                            new CacheMiddleware(
-                                $cachePool
-                            ),
+                            $app['parser.middleware.cache'],
                             new ErrorHandlingMiddleware()
                         ]
                     )
